@@ -11,13 +11,13 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/damiandibie/myassessment.git'
             }
         }
-        /*
+        
         stage('Terraform Init') {
             steps {
                 sh 'terraform init'
             }
         }
-        */
+        
         stage('Terraform Plan') {
             steps {
                 sh 'terraform plan'
