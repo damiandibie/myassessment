@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main', url: 'https://github.com/damiandibie/myassessment.git'
             }
         }
         
@@ -35,6 +35,7 @@ pipeline {
                 sh 'terraform apply -auto-approve tfplan'
             }
         }
+        */
     }
     
     post {
@@ -43,4 +44,3 @@ pipeline {
         }
     }
 }
-*/
