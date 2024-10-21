@@ -6,20 +6,17 @@ terraform {
     }
   }
 }
-
 # Configure the AWS Provider
 provider "aws" {
   region = "us-east-1"
 }
 
 provider "aws" {
-  region = var.aws_region
-  alias = "singapore"
+  alias  = "singapore"
+  region = "ap-southeast-1"
 }
 
 provider "aws" {
+  alias  = "ireland"
   region = "eu-west-1"
-  alias = "ireland"
 }
-
-
