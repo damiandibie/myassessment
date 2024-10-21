@@ -24,7 +24,7 @@ pipeline {
             }
         }
         
-       /* stage('Approval') {
+        stage('Approval') {
             steps {
                 input message: 'Apply the terraform plan?'
             }
@@ -32,10 +32,10 @@ pipeline {
         
         stage('Terraform Apply') {
             steps {
-                sh 'terraform apply -auto-approve'
+                sh 'terraform apply -auto-approve -lock=false'
             }
         }
-        */
+        
     }
     
     post {
