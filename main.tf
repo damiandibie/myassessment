@@ -125,6 +125,7 @@ resource "aws_instance" "singapore" {
   instance_type = var.instance_type
   subnet_id     = aws_subnet.singapore.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+  key_name      = "damian"
 
   tags = {
     Name = "singapore-instance"
@@ -138,7 +139,7 @@ resource "aws_instance" "ireland" {
   instance_type = var.instance_type
   subnet_id     = aws_subnet.ireland.id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
-
+  key_name      = "damian"
   tags = {
     Name = "ireland-instance"
   }
