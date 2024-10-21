@@ -29,7 +29,6 @@ resource "aws_instance" "singapore_ec2" {
   provider      = aws.singapore
   ami           = "ami-047126e50991d067b"  # Amazon Linux 2 AMI in Singapore
   instance_type = "t2.micro"
-  key_name      = "damian"
   
   tags = {
     Name = "Singapore-EC2"
@@ -40,7 +39,6 @@ resource "aws_instance" "ireland_ec2" {
   provider      = aws.ireland
   ami           = "ami-0d64bb532e0502c46"  # Amazon Linux 2 AMI in Ireland
   instance_type = "t2.micro"
-  key_name      = "damian"
   
   tags = {
     Name = "Ireland-EC2"
