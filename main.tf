@@ -27,7 +27,7 @@ resource "aws_dynamodb_table" "basics-dynamodb-table" {
 # EC2 instances
 resource "aws_instance" "singapore_ec2" {
   provider      = aws.singapore
-  ami           = "ami-0866a3c8686eaeeba"  # Amazon Linux 2 AMI in Singapore
+  ami           = "ami-005fc0f236362e99f"  # Amazon Linux 2 AMI in Singapore
   instance_type = "t2.micro"
   key_name      = "damian"
   
@@ -38,7 +38,7 @@ resource "aws_instance" "singapore_ec2" {
 
 resource "aws_instance" "ireland_ec2" {
   provider      = aws.ireland
-  ami           = "ami-0866a3c8686eaeeba"  # Amazon Linux 2 AMI in Ireland
+  ami           = "ami-005fc0f236362e99f"  # Amazon Linux 2 AMI in Ireland
   instance_type = "t2.micro"
   key_name      = "damian"
   
@@ -64,7 +64,7 @@ resource "aws_lb_listener" "front_end" {
   protocol          = "HTTP"
 
   default_action {
-    type = "weighted-forward"
+    type = "forward"
     forward {
       target_group {
         arn    = aws_lb_target_group.singapore_tg.arn
@@ -259,8 +259,8 @@ resource "aws_autoscaling_group" "ireland_asg" {
 
 resource "aws_launch_template" "ec2_template" {
   name_prefix   = "ec2-template"
-  instance_type = "t3.micro"
-  image_id      = "ami-0df7a207adb9748c7"  # Update with the correct AMI ID for your region
+  instance_type = "t2.micro"
+  image_id      = "ami-005fc0f236362e99f"  # Update with the correct AMI ID for your region
 
   network_interfaces {
     associate_public_ip_address = true
