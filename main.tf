@@ -55,8 +55,16 @@ resource "aws_vpc" "main-ie" {
     Name = "main-ie-vpc"
   }
 }
-/*
+
 # Create Singapore subnet
+resource "aws_subnet" "main" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.subnet_cidr
+  
+  tags = {
+    Name = "singapore-subnet"
+  }
+}
 resource "aws_subnet" "singapore" {
   vpc_id     = aws_vpc.main-sg.id
   cidr_block = var.sg_subnet_cidr
@@ -66,6 +74,7 @@ resource "aws_subnet" "singapore" {
     Name = "singapore-subnet"
   }
 }
+
 # Create Ireland subnet
 resource "aws_subnet" "ireland" {
   provider   = aws.ireland
@@ -407,5 +416,5 @@ resource "aws_wafv2_web_acl_association" "main" {
   resource_arn = aws_lb.main.arn
   web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
-*/
+
 
