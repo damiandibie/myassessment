@@ -45,17 +45,6 @@ resource "aws_vpc" "main-sg" {
     Name = "main-sg-vpc"
   }
 }
-
-# Create Singapore subnet
-resource "aws_subnet" "singapore" {
-  vpc_id     = aws_vpc.main-sg.id
-  cidr_block = var.sg_subnet_cidr
-  provider   = aws.singapore
-
-  tags = {
-    Name = "singapore-subnet"
-  }
-}
 resource "aws_vpc" "main-ie" {
   cidr_block = var.vpc_cidr
   provider   = aws.ireland
@@ -66,7 +55,17 @@ resource "aws_vpc" "main-ie" {
     Name = "main-ie-vpc"
   }
 }
+/*
+# Create Singapore subnet
+resource "aws_subnet" "singapore" {
+  vpc_id     = aws_vpc.main-sg.id
+  cidr_block = var.sg_subnet_cidr
+  provider   = aws.singapore
 
+  tags = {
+    Name = "singapore-subnet"
+  }
+}
 # Create Ireland subnet
 resource "aws_subnet" "ireland" {
   provider   = aws.ireland
@@ -316,7 +315,7 @@ resource "aws_lb_target_group" "singapore" {
   name     = "tg-singapore"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  vpc_id   = aws_vpc.main-sg.id
 
   health_check {
     path                = "/"
@@ -330,7 +329,7 @@ resource "aws_lb_target_group" "ireland" {
   name     = "tg-ireland"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
+  vpc_id   = aws_vpc.main-ie.id
 
   health_check {
     path                = "/"
@@ -408,4 +407,5 @@ resource "aws_wafv2_web_acl_association" "main" {
   resource_arn = aws_lb.main.arn
   web_acl_arn  = aws_wafv2_web_acl.main.arn
 }
+*/
 
