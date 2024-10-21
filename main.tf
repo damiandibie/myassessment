@@ -35,9 +35,20 @@ resource "aws_vpc" "main" {
   }
 }
 
+resource "aws_vpc" "main-sg" {
+  cidr_block = var.vpc_cidr
+  provider   = aws.singapore
+  enable_dns_hostnames = true
+  enable_dns_support = true
+
+  tags = {
+    Name = "main-sg-vpc"
+  }
+}
+
 # Create Singapore subnet
 resource "aws_subnet" "singapore" {
-  vpc_id     = aws_vpc.main.id
+  vpc_id     = aws_vpc.main-sg.id
   cidr_block = var.sg_subnet_cidr
   availability_zone = "${var.aws_region}a"
 
@@ -45,11 +56,21 @@ resource "aws_subnet" "singapore" {
     Name = "singapore-subnet"
   }
 }
+resource "aws_vpc" "main-ie" {
+  cidr_block = var.vpc_cidr
+  provider   = aws.ireland
+  enable_dns_hostnames = true
+  enable_dns_support = true
+
+  tags = {
+    Name = "main-ie-vpc"
+  }
+}
 
 # Create Ireland subnet
 resource "aws_subnet" "ireland" {
   provider   = aws.ireland
-  vpc_id     = aws_vpc.main.id
+  vpc_id     = aws_vpc.main-ie.id
   cidr_block = var.ie_subnet_cidr
   availability_zone = "eu-west-1a"
 
@@ -66,6 +87,20 @@ resource "aws_internet_gateway" "main" {
     Name = "main-igw"
   }
 }
+resource "aws_internet_gateway" "main-sg" {
+  vpc_id = aws_vpc.main-sg.id
+
+  tags = {
+    Name = "main-sg-igw"
+  }
+}
+resource "aws_internet_gateway" "main-ie" {
+  vpc_id = aws_vpc.main-ie.id
+
+  tags = {
+    Name = "main-ie-igw"
+  }
+}
 
 # Create Route Table
 resource "aws_route_table" "main" {
@@ -78,6 +113,30 @@ resource "aws_route_table" "main" {
 
   tags = {
     Name = "main-route-table"
+  }
+}
+resource "aws_route_table" "main-sg" {
+  vpc_id = aws_vpc.main-sg.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main-sg.id
+  }
+
+  tags = {
+    Name = "main-sg-route-table"
+  }
+}
+resource "aws_route_table" "main-ie" {
+  vpc_id = aws_vpc.main-ie.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main-ie.id
+  }
+
+  tags = {
+    Name = "main-ie-route-table"
   }
 }
 
@@ -118,13 +177,60 @@ resource "aws_security_group" "allow_ssh" {
     Name = "allow_ssh"
   }
 }
+resource "aws_security_group" "allow_ssh-sg" {
+  name        = "allow_ssh-sg"
+  description = "Allow SSH inbound traffic"
+  vpc_id      = aws_vpc.main-sg.id
 
+  ingress {
+    description = "SSH from VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "allow_ssh-sg"
+  }
+}
+resource "aws_security_group" "allow_ssh-ie" {
+  name        = "allow_ssh-ie"
+  description = "Allow SSH inbound traffic"
+  vpc_id      = aws_vpc.main-ie.id
+
+  ingress {
+    description = "SSH from VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "allow_ssh-ie"
+  }
+}
 # Create EC2 instance in Singapore
 resource "aws_instance" "singapore" {
   ami           = "ami-005fc0f236362e99f"  
   instance_type = var.instance_type
   subnet_id     = aws_subnet.singapore.id
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh-sg.id]
   key_name      = "damian"
 
   tags = {
@@ -138,8 +244,9 @@ resource "aws_instance" "ireland" {
   ami           = "ami-005fc0f236362e99f"  
   instance_type = var.instance_type
   subnet_id     = aws_subnet.ireland.id
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh-ie.id]
   key_name      = "damian"
+
   tags = {
     Name = "ireland-instance"
   }
@@ -166,7 +273,7 @@ resource "aws_db_instance" "default" {
   password             = var.db_password
   parameter_group_name = "default.mysql8.0"
   db_subnet_group_name = aws_db_subnet_group.default.name
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh-sg.id]
   skip_final_snapshot  = true
 
   tags = {
