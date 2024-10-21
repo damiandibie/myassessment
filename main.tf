@@ -236,7 +236,7 @@ resource "aws_autoscaling_group" "singapore_asg" {
   desired_capacity    = 2
 
   launch_template {
-    id      = aws_launch_template.ec2_template.id
+    id      = aws_launch_template.ec2_template-sg.id
     version = "$Latest"
   }
 }
@@ -250,15 +250,26 @@ resource "aws_autoscaling_group" "ireland_asg" {
   desired_capacity    = 1
 
   launch_template {
-    id      = aws_launch_template.ec2_template.id
+    id      = aws_launch_template.ec2_template-ie.id
     version = "$Latest"
   }
 }
 
-resource "aws_launch_template" "ec2_template" {
+resource "aws_launch_template" "ec2_template-sg" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
   image_id      = "ami-047126e50991d067b"  # Update with the correct AMI ID for your region
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.ec2_sg.id]
+  }
+}
+
+resource "aws_launch_template" "ec2_template-ie" {
+  name_prefix   = "ec2-template"
+  instance_type = "t2.micro"
+  image_id      = "ami-0d64bb532e0502c46"  
 
   network_interfaces {
     associate_public_ip_address = true
