@@ -50,7 +50,7 @@ resource "aws_vpc" "main-sg" {
 resource "aws_subnet" "singapore" {
   vpc_id     = aws_vpc.main-sg.id
   cidr_block = var.sg_subnet_cidr
-  availability_zone = "${var.aws_region}a"
+  provider   = aws.singapore
 
   tags = {
     Name = "singapore-subnet"
@@ -143,13 +143,13 @@ resource "aws_route_table" "main-ie" {
 # Associate Route Table with Subnets
 resource "aws_route_table_association" "singapore" {
   subnet_id      = aws_subnet.singapore.id
-  route_table_id = aws_route_table.main.id
+  route_table_id = aws_route_table.main-sg.id
 }
 
 resource "aws_route_table_association" "ireland" {
   provider       = aws.ireland
   subnet_id      = aws_subnet.ireland.id
-  route_table_id = aws_route_table.main.id
+  route_table_id = aws_route_table.main-sg.id
 }
 
 # Create Security Group
