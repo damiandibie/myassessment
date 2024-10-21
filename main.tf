@@ -64,6 +64,7 @@ resource "aws_subnet" "main" {
   tags = {
     Name = "singapore-subnet"
   }
+  depends_on = [aws_internet_gateway_attachment.main]
 }
 resource "aws_subnet" "singapore" {
   vpc_id     = aws_vpc.main-sg.id
@@ -73,6 +74,7 @@ resource "aws_subnet" "singapore" {
   tags = {
     Name = "singapore-subnet"
   }
+  depends_on = [aws_internet_gateway_attachment.main-sg]
 }
 
 # Create Ireland subnet
@@ -85,6 +87,7 @@ resource "aws_subnet" "ireland" {
   tags = {
     Name = "ireland-subnet"
   }
+  depends_on = [aws_internet_gateway_attachment.main-ie]
 }
 
 # Create Internet Gateway
@@ -95,6 +98,11 @@ resource "aws_internet_gateway" "main" {
     Name = "main-igw"
   }
 }
+resource "aws_internet_gateway_attachment" "main" {
+  internet_gateway_id = aws_internet_gateway.main.id
+  vpc_id              = aws_vpc.main.id
+
+}
 resource "aws_internet_gateway" "main-sg" {
   vpc_id = aws_vpc.main-sg.id
 
@@ -102,12 +110,22 @@ resource "aws_internet_gateway" "main-sg" {
     Name = "main-sg-igw"
   }
 }
+resource "aws_internet_gateway_attachment" "main-sg" {
+  internet_gateway_id = aws_internet_gateway.main-sg.id
+  vpc_id              = aws_vpc.main-sg.id
+
+}
 resource "aws_internet_gateway" "main-ie" {
   vpc_id = aws_vpc.main-ie.id
 
   tags = {
     Name = "main-ie-igw"
   }
+}
+resource "aws_internet_gateway_attachment" "main-ie" {
+  internet_gateway_id = aws_internet_gateway.main-ie.id
+  vpc_id              = aws_vpc.main-ie.id
+
 }
 
 # Create Route Table
@@ -122,6 +140,7 @@ resource "aws_route_table" "main" {
   tags = {
     Name = "main-route-table"
   }
+  depends_on = [aws_internet_gateway_attachment.main]
 }
 resource "aws_route_table" "main-sg" {
   vpc_id = aws_vpc.main-sg.id
@@ -134,6 +153,7 @@ resource "aws_route_table" "main-sg" {
   tags = {
     Name = "main-sg-route-table"
   }
+  depends_on = [aws_internet_gateway_attachment.main-sg]
 }
 resource "aws_route_table" "main-ie" {
   vpc_id = aws_vpc.main-ie.id
@@ -146,6 +166,7 @@ resource "aws_route_table" "main-ie" {
   tags = {
     Name = "main-ie-route-table"
   }
+  depends_on = [aws_internet_gateway_attachment.main-ie]
 }
 
 # Associate Route Table with Subnets
@@ -244,6 +265,7 @@ resource "aws_instance" "singapore" {
   tags = {
     Name = "singapore-instance"
   }
+  depends_on = [aws_internet_gateway_attachment.main-sg]
 }
 
 # Create EC2 instance in Ireland
@@ -258,6 +280,7 @@ resource "aws_instance" "ireland" {
   tags = {
     Name = "ireland-instance"
   }
+  depends_on = [aws_internet_gateway_attachment.main-ie]
 }
 
 # Create RDS MySQL instance in Singapore
@@ -287,6 +310,7 @@ resource "aws_db_instance" "default" {
   tags = {
     Name = "singapore-mysql-instance"
   }
+  depends_on = [aws_internet_gateway_attachment.main-sg]
 }
 
 # Create Application Load Balancer
