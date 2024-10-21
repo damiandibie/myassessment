@@ -11,6 +11,10 @@ variable "aws_region" {
   description = "The AWS region to create resources in"
   default     = "ap-southeast-1"  # Singapore
 }
+variable "subnet_cidr" {
+  description = "CIDR block for the subnet in Singapore"
+  default     = "10.0.1.0/24"
+}
 
 variable "sg_subnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
