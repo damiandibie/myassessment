@@ -27,7 +27,7 @@ resource "aws_dynamodb_table" "basics-dynamodb-table" {
 # EC2 instances
 resource "aws_instance" "singapore_ec2" {
   provider      = aws.singapore
-  ami           = "ami-005fc0f236362e99f"  # Amazon Linux 2 AMI in Singapore
+  ami           = "ami-047126e50991d067b"  # Amazon Linux 2 AMI in Singapore
   instance_type = "t2.micro"
   key_name      = "damian"
   
@@ -38,7 +38,7 @@ resource "aws_instance" "singapore_ec2" {
 
 resource "aws_instance" "ireland_ec2" {
   provider      = aws.ireland
-  ami           = "ami-005fc0f236362e99f"  # Amazon Linux 2 AMI in Ireland
+  ami           = "ami-0d64bb532e0502c46"  # Amazon Linux 2 AMI in Ireland
   instance_type = "t2.micro"
   key_name      = "damian"
   
@@ -260,7 +260,7 @@ resource "aws_autoscaling_group" "ireland_asg" {
 resource "aws_launch_template" "ec2_template" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
-  image_id      = "ami-005fc0f236362e99f"  # Update with the correct AMI ID for your region
+  image_id      = "ami-047126e50991d067b"  # Update with the correct AMI ID for your region
 
   network_interfaces {
     associate_public_ip_address = true
