@@ -1,11 +1,11 @@
 #Create S3 bucket
-resource "aws_s3_bucket" "damian-s3" {
-  bucket = var.damian-s3
+resource "aws_s3_bucket" "damiand-s3" {
+  bucket = var.damiand-s3
   
 }
 
-resource "aws_s3_bucket_versioning" "damian-ver" {
-  bucket = aws_s3_bucket.damian-s3.id
+resource "aws_s3_bucket_versioning" "damiand-ver" {
+  bucket = aws_s3_bucket.damiand-s3.id
   versioning_configuration {
     status = "Enabled"
   }
@@ -13,8 +13,8 @@ resource "aws_s3_bucket_versioning" "damian-ver" {
 
 
 #Create dynamoDB
-resource "aws_dynamodb_table" "basic-dynamodb-table" {
-  name           = "damian-lock-state"
+resource "aws_dynamodb_table" "basics-dynamodb-table" {
+  name           = "damiand-lock-state"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "LockID"
 
@@ -24,384 +24,171 @@ resource "aws_dynamodb_table" "basic-dynamodb-table" {
   }
 }
 
-# Create VPC
-resource "aws_vpc" "main" {
-  cidr_block = var.vpc_cidr
-  enable_dns_hostnames = true
-  enable_dns_support = true
-
-  tags = {
-    Name = "main-vpc"
-  }
-}
-
-resource "aws_vpc" "main-sg" {
-  cidr_block = var.vpc_cidr
-  provider   = aws.singapore
-  enable_dns_hostnames = true
-  enable_dns_support = true
-
-  tags = {
-    Name = "main-sg-vpc"
-  }
-}
-resource "aws_vpc" "main-ie" {
-  cidr_block = var.vpc_cidr
-  provider   = aws.ireland
-  enable_dns_hostnames = true
-  enable_dns_support = true
-
-  tags = {
-    Name = "main-ie-vpc"
-  }
-}
-
-# Create Singapore subnet
-resource "aws_subnet" "main" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = var.subnet_cidr
+# EC2 instances
+resource "aws_instance" "singapore_ec2" {
+  provider      = aws.singapore
+  ami           = "ami-0866a3c8686eaeeba"  # Amazon Linux 2 AMI in Singapore
+  instance_type = "t2.micro"
+  key_name      = "damian"
   
   tags = {
-    Name = "singapore-subnet"
-  }
-  depends_on = [aws_internet_gateway_attachment.main]
-}
-resource "aws_subnet" "singapore" {
-  vpc_id     = aws_vpc.main-sg.id
-  cidr_block = var.sg_subnet_cidr
-  provider   = aws.singapore
-
-  tags = {
-    Name = "singapore-subnet"
-  }
-  depends_on = [aws_internet_gateway_attachment.main-sg]
-}
-
-# Create Ireland subnet
-resource "aws_subnet" "ireland" {
-  provider   = aws.ireland
-  vpc_id     = aws_vpc.main-ie.id
-  cidr_block = var.ie_subnet_cidr
-  availability_zone = "eu-west-1a"
-
-  tags = {
-    Name = "ireland-subnet"
-  }
-  depends_on = [aws_internet_gateway_attachment.main-ie]
-}
-
-# Create Internet Gateway
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "main-igw"
+    Name = "Singapore-EC2"
   }
 }
-resource "aws_internet_gateway_attachment" "main" {
-  internet_gateway_id = aws_internet_gateway.main.id
-  vpc_id              = aws_vpc.main.id
 
-}
-resource "aws_internet_gateway" "main-sg" {
-  vpc_id = aws_vpc.main-sg.id
-
-  tags = {
-    Name = "main-sg-igw"
-  }
-}
-resource "aws_internet_gateway_attachment" "main-sg" {
-  internet_gateway_id = aws_internet_gateway.main-sg.id
-  vpc_id              = aws_vpc.main-sg.id
-
-}
-resource "aws_internet_gateway" "main-ie" {
-  vpc_id = aws_vpc.main-ie.id
-
-  tags = {
-    Name = "main-ie-igw"
-  }
-}
-resource "aws_internet_gateway_attachment" "main-ie" {
-  internet_gateway_id = aws_internet_gateway.main-ie.id
-  vpc_id              = aws_vpc.main-ie.id
-
-}
-
-# Create Route Table
-resource "aws_route_table" "main" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-
-  tags = {
-    Name = "main-route-table"
-  }
-  depends_on = [aws_internet_gateway_attachment.main]
-}
-resource "aws_route_table" "main-sg" {
-  vpc_id = aws_vpc.main-sg.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main-sg.id
-  }
-
-  tags = {
-    Name = "main-sg-route-table"
-  }
-  depends_on = [aws_internet_gateway_attachment.main-sg]
-}
-resource "aws_route_table" "main-ie" {
-  vpc_id = aws_vpc.main-ie.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main-ie.id
-  }
-
-  tags = {
-    Name = "main-ie-route-table"
-  }
-  depends_on = [aws_internet_gateway_attachment.main-ie]
-}
-
-# Associate Route Table with Subnets
-resource "aws_route_table_association" "singapore" {
-  subnet_id      = aws_subnet.singapore.id
-  route_table_id = aws_route_table.main-sg.id
-}
-
-resource "aws_route_table_association" "ireland" {
-  provider       = aws.ireland
-  subnet_id      = aws_subnet.ireland.id
-  route_table_id = aws_route_table.main-sg.id
-}
-
-# Create Security Group
-resource "aws_security_group" "allow_ssh" {
-  name        = "allow_ssh"
-  description = "Allow SSH inbound traffic"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description = "SSH from VPC"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "allow_ssh"
-  }
-}
-resource "aws_security_group" "allow_ssh-sg" {
-  name        = "allow_ssh-sg"
-  description = "Allow SSH inbound traffic"
-  vpc_id      = aws_vpc.main-sg.id
-
-  ingress {
-    description = "SSH from VPC"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "allow_ssh-sg"
-  }
-}
-resource "aws_security_group" "allow_ssh-ie" {
-  name        = "allow_ssh-ie"
-  description = "Allow SSH inbound traffic"
-  vpc_id      = aws_vpc.main-ie.id
-
-  ingress {
-    description = "SSH from VPC"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "allow_ssh-ie"
-  }
-}
-# Create EC2 instance in Singapore
-resource "aws_instance" "singapore" {
-  ami           = "ami-005fc0f236362e99f"  
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.singapore.id
-  vpc_security_group_ids = [aws_security_group.allow_ssh-sg.id]
-  key_name      = "damian"
-
-  tags = {
-    Name = "singapore-instance"
-  }
-  depends_on = [aws_internet_gateway_attachment.main-sg]
-}
-
-# Create EC2 instance in Ireland
-resource "aws_instance" "ireland" {
+resource "aws_instance" "ireland_ec2" {
   provider      = aws.ireland
-  ami           = "ami-005fc0f236362e99f"  
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.ireland.id
-  vpc_security_group_ids = [aws_security_group.allow_ssh-ie.id]
+  ami           = "ami-0866a3c8686eaeeba"  # Amazon Linux 2 AMI in Ireland
+  instance_type = "t2.micro"
   key_name      = "damian"
-
+  
   tags = {
-    Name = "ireland-instance"
-  }
-  depends_on = [aws_internet_gateway_attachment.main-ie]
-}
-
-# Create RDS MySQL instance in Singapore
-resource "aws_db_subnet_group" "default" {
-  name       = "main"
-  subnet_ids = [aws_subnet.singapore.id, aws_subnet.ireland.id]
-
-  tags = {
-    Name = "My DB subnet group"
+    Name = "Ireland-EC2"
   }
 }
 
-resource "aws_db_instance" "default" {
-  allocated_storage    = 20
-  storage_type         = "gp2"
-  engine               = "mysql"
-  engine_version       = "8.0"
-  instance_class       = var.db_instance_class
-  db_name              = var.db_name
-  username             = var.db_username
-  password             = var.db_password
-  parameter_group_name = "default.mysql8.0"
-  db_subnet_group_name = aws_db_subnet_group.default.name
-  vpc_security_group_ids = [aws_security_group.allow_ssh-sg.id]
-  skip_final_snapshot  = true
-
-  tags = {
-    Name = "singapore-mysql-instance"
-  }
-  depends_on = [aws_internet_gateway_attachment.main-sg]
-}
-
-# Create Application Load Balancer
-resource "aws_lb" "main" {
-  name               = "main-alb"
+# Application Load Balancer
+resource "aws_lb" "global_alb" {
+  name               = "global-alb"
   internal           = false
   load_balancer_type = "application"
-  subnets            = [aws_subnet.singapore.id, aws_subnet.ireland.id]
+  security_groups    = [aws_security_group.alb_sg.id]
+  subnets            = data.aws_subnets.default_subnets.ids
 
   enable_deletion_protection = false
-
-  tags = {
-    Name = "main-alb"
-  }
 }
 
-# ALB Listener
 resource "aws_lb_listener" "front_end" {
-  load_balancer_arn = aws_lb.main.arn
+  load_balancer_arn = aws_lb.global_alb.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    type = "fixed-response"
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "Access Denied"
-      status_code  = "403"
-    }
-  }
-}
-
-# ALB Target Groups
-resource "aws_lb_target_group" "singapore" {
-  name     = "tg-singapore"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main-sg.id
-
-  health_check {
-    path                = "/"
-    healthy_threshold   = 2
-    unhealthy_threshold = 10
-  }
-}
-
-resource "aws_lb_target_group" "ireland" {
-  provider = aws.ireland
-  name     = "tg-ireland"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main-ie.id
-
-  health_check {
-    path                = "/"
-    healthy_threshold   = 2
-    unhealthy_threshold = 10
-  }
-}
-
-# Weighted target groups for traffic distribution
-resource "aws_lb_listener_rule" "weighted" {
-  listener_arn = aws_lb_listener.front_end.arn
-  priority     = 50
-
-  action {
-    type = "forward"
+    type = "weighted-forward"
     forward {
       target_group {
-        arn    = aws_lb_target_group.singapore.arn
+        arn    = aws_lb_target_group.singapore_tg.arn
         weight = 60
       }
       target_group {
-        arn    = aws_lb_target_group.ireland.arn
+        arn    = aws_lb_target_group.ireland_tg.arn
         weight = 30
       }
     }
   }
+}
 
-  condition {
-    path_pattern {
-      values = ["/*"]
-    }
+resource "aws_lb_target_group" "singapore_tg" {
+  name     = "singapore-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_vpc.default.id
+}
+
+resource "aws_lb_target_group" "ireland_tg" {
+  name     = "ireland-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_vpc.default.id
+}
+
+resource "aws_lb_target_group_attachment" "singapore_attachment" {
+  target_group_arn = aws_lb_target_group.singapore_tg.arn
+  target_id        = aws_instance.singapore_ec2.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "ireland_attachment" {
+  target_group_arn = aws_lb_target_group.ireland_tg.arn
+  target_id        = aws_instance.ireland_ec2.id
+  port             = 80
+}
+
+# RDS MySQL instance
+resource "aws_db_instance" "mysql_db" {
+  engine               = "mysql"
+  engine_version       = "8.0"
+  instance_class       = "db.t3.micro"
+  allocated_storage    = 20
+  storage_type         = "gp2"
+  identifier           = "mydb"
+  username             = var.db_username
+  password             = var.db_password  # Change this to a secure password
+  skip_final_snapshot  = true
+  publicly_accessible  = false
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
+}
+
+# Security Groups
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-sg"
+  description = "Security group for ALB"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-# Geographical restriction
-resource "aws_wafv2_web_acl" "main" {
-  name        = "geo-restriction"
-  description = "Geo restriction for France"
-  scope       = "REGIONAL"
+resource "aws_security_group" "ec2_sg" {
+  name        = "ec2-sg"
+  description = "Security group for EC2 instances"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "rds_sg" {
+  name        = "rds-sg"
+  description = "Security group for RDS"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ec2_sg.id]
+  }
+}
+
+# Data sources for default VPC and subnets
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_subnets" "default_subnets" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+# WAF WebACL for France restriction
+resource "aws_wafv2_web_acl" "france_restriction" {
+  name  = "france-restriction"
+  scope = "REGIONAL"
 
   default_action {
     allow {}
@@ -423,22 +210,73 @@ resource "aws_wafv2_web_acl" "main" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name                = "BlockFrance"
+      metric_name                = "FranceBlockRule"
       sampled_requests_enabled   = true
     }
   }
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "GeoRestriction"
+    metric_name                = "FranceRestrictionWebACL"
     sampled_requests_enabled   = true
   }
 }
 
-# Associate WAF with ALB
-resource "aws_wafv2_web_acl_association" "main" {
-  resource_arn = aws_lb.main.arn
-  web_acl_arn  = aws_wafv2_web_acl.main.arn
+# Associate WAF WebACL with ALB
+resource "aws_wafv2_web_acl_association" "alb_waf_association" {
+  resource_arn = aws_lb.global_alb.arn
+  web_acl_arn  = aws_wafv2_web_acl.france_restriction.arn
 }
 
+# Auto Scaling configuration for peak users
+resource "aws_autoscaling_group" "singapore_asg" {
+  name                = "singapore-asg"
+  vpc_zone_identifier = data.aws_subnets.default_subnets.ids
+  target_group_arns   = [aws_lb_target_group.singapore_tg.arn]
+  min_size            = 1
+  max_size            = 10
+  desired_capacity    = 2
 
+  launch_template {
+    id      = aws_launch_template.ec2_template.id
+    version = "$Latest"
+  }
+}
+
+resource "aws_autoscaling_group" "ireland_asg" {
+  name                = "ireland-asg"
+  vpc_zone_identifier = data.aws_subnets.default_subnets.ids
+  target_group_arns   = [aws_lb_target_group.ireland_tg.arn]
+  min_size            = 1
+  max_size            = 5
+  desired_capacity    = 1
+
+  launch_template {
+    id      = aws_launch_template.ec2_template.id
+    version = "$Latest"
+  }
+}
+
+resource "aws_launch_template" "ec2_template" {
+  name_prefix   = "ec2-template"
+  instance_type = "t3.micro"
+  image_id      = "ami-0df7a207adb9748c7"  # Update with the correct AMI ID for your region
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.ec2_sg.id]
+  }
+}
+
+resource "aws_autoscaling_policy" "target_tracking_policy" {
+  name                   = "target-tracking-policy"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.singapore_asg.name
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 70.0
+  }
+}
