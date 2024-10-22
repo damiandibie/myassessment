@@ -23,7 +23,47 @@ resource "aws_dynamodb_table" "basics-dynamodb-table" {
     type = "S"
   }
 }
+resource "aws_vpc" "damian-sg-vpc" {
+  cidr_block = var.vpc_cidr
+  provider   = aws.singapore
+  enable_dns_hostnames = true
+  enable_dns_support = true
 
+  tags = {
+    Name = "damian-sg-vpc"
+  }
+}
+
+resource "aws_vpc" "damian-ie-vpc" {
+  cidr_block = var.vpc_cidr
+  provider   = aws.ireland
+  enable_dns_hostnames = true
+  enable_dns_support = true
+
+  tags = {
+    Name = "damian-ie-vpc"
+  }
+}
+
+resource "aws_subnet" "damian-sg-subnet" {
+  vpc_id     = aws_vpc.damian-sg-vpc.id
+  cidr_block = var.sg_subnet_cidr
+  provider   = aws.singapore
+
+  tags = {
+    Name = "damian-sg-subnet"
+  }
+}
+
+resource "aws_subnet" "damian-ie-subnet" {
+  vpc_id     = aws_vpc.damian-ie-vpc.id
+  cidr_block = var.ie_subnet_cidr
+  provider   = aws.ireland
+
+  tags = {
+    Name = "damian-ie-subnet"
+  }
+}
 # EC2 instances
 resource "aws_instance" "singapore_ec2" {
   provider      = aws.singapore
