@@ -29,6 +29,7 @@ resource "aws_instance" "singapore_ec2" {
   provider      = aws.singapore
   ami           = "ami-047126e50991d067b"  # Amazon Linux 2 AMI in Singapore
   instance_type = "t2.micro"
+  subnet_id     = "damian-sg-subnet"
   
   tags = {
     Name = "Singapore-EC2"
@@ -39,6 +40,7 @@ resource "aws_instance" "ireland_ec2" {
   provider      = aws.ireland
   ami           = "ami-0d64bb532e0502c46"  # Amazon Linux 2 AMI in Ireland
   instance_type = "t2.micro"
+  subnet_id     = "damian-ie-subnet"
   
   tags = {
     Name = "Ireland-EC2"
@@ -51,7 +53,7 @@ resource "aws_lb" "global_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = data.aws_subnets.default_subnets.ids
+  subnets            = ["damian-sg-subnet", "damian-ie-subnet"]
 
   enable_deletion_protection = false
 }
@@ -80,14 +82,14 @@ resource "aws_lb_target_group" "singapore_tg" {
   name     = "singapore-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
+  vpc_id   = "damian-sg-vpc"
 }
 
 resource "aws_lb_target_group" "ireland_tg" {
   name     = "ireland-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = data.aws_vpc.default.id
+  vpc_id   = "damian-ie-vpc"
 }
 
 resource "aws_lb_target_group_attachment" "singapore_attachment" {
@@ -141,11 +143,11 @@ resource "aws_security_group" "alb_sg" {
 resource "aws_security_group" "ec2_sg" {
   name        = "ec2-sg"
   description = "Security group for EC2 instances"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = "damian-sg-vpc"
 
   ingress {
-    from_port       = 80
-    to_port         = 80
+    from_port       = 0
+    to_port         = 0
     protocol        = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
@@ -161,7 +163,7 @@ resource "aws_security_group" "ec2_sg" {
 resource "aws_security_group" "rds_sg" {
   name        = "rds-sg"
   description = "Security group for RDS"
-  vpc_id      = data.aws_vpc.default.id
+  vpc_id      = "damian-sg-vpc"
 
   ingress {
     from_port       = 3306
@@ -229,7 +231,7 @@ resource "aws_wafv2_web_acl_association" "alb_waf_association" {
 # Auto Scaling configuration for peak users
 resource "aws_autoscaling_group" "singapore_asg" {
   name                = "singapore-asg"
-  vpc_zone_identifier = data.aws_subnets.default_subnets.ids
+  vpc_zone_identifier = "damian-sg-subnet"
   target_group_arns   = [aws_lb_target_group.singapore_tg.arn]
   min_size            = 1
   max_size            = 10
@@ -243,7 +245,7 @@ resource "aws_autoscaling_group" "singapore_asg" {
 
 resource "aws_autoscaling_group" "ireland_asg" {
   name                = "ireland-asg"
-  vpc_zone_identifier = data.aws_subnets.default_subnets.ids
+  vpc_zone_identifier = "damian-ie-subnet"
   target_group_arns   = [aws_lb_target_group.ireland_tg.arn]
   min_size            = 1
   max_size            = 5
