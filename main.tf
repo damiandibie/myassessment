@@ -23,6 +23,7 @@ resource "aws_dynamodb_table" "basics-dynamodb-table" {
     type = "S"
   }
 }
+/*
 resource "aws_vpc" "damian-sg-vpc" {
   cidr_block = var.vpc_cidr
   provider   = aws.singapore
@@ -331,3 +332,4 @@ resource "aws_autoscaling_policy" "target_tracking_policy" {
     target_value = 70.0
   }
 }
+*/
