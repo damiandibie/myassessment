@@ -8,19 +8,22 @@ variable "db_password" {
 
 }
 
-variable "vpc_cidr" {
+variable "vpc_cidr_sg" {
   description = "CIDR block for the VPC"
   default     = "10.0.0.0/16"
 }
 
 variable "sg_subnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
-  default     = "10.0.1.0/24"
+  default     = "10.0.0.0/24"
 }
-
+variable "vpc_cidr_ie" {
+  description = "CIDR block for the VPC"
+  default     = "172.0.0.0/16"
+}
 variable "ie_subnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
-  default     = "10.0.2.0/24"
+  default     = "172.16.0.0/24"
 }
 variable "instance_type" {
   description = "EC2 instance type"
