@@ -194,6 +194,7 @@ resource "aws_security_group" "dam-ie-sg" {
 # EC2 Instances
 resource "aws_instance" "dam-sg-ec2" {
   provider               = aws.singapore
+  key_name               = "damian"
   ami                    = "ami-047126e50991d067b"
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.dam-sg-subnet.id
@@ -205,6 +206,7 @@ resource "aws_instance" "dam-sg-ec2" {
 }
 resource "aws_instance" "dam-ie-ec2" {
   provider               = aws.ireland
+  key_name               = "damian"
   ami                    = "ami-0d64bb532e0502c46"
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.dam-ie-subnet.id
@@ -415,6 +417,7 @@ resource "aws_autoscaling_group" "dam-ie-asg" {
 resource "aws_launch_template" "ec2-template-sg" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
+  key_name      = "damian"
   image_id      = "ami-047126e50991d067b"
   provider      = aws.singapore
 
@@ -427,6 +430,7 @@ resource "aws_launch_template" "ec2-template-sg" {
 resource "aws_launch_template" "ec2-template-ie" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
+  key_name      = "damian"
   image_id      = "ami-0d64bb532e0502c46"
   provider      = aws.ireland
 
