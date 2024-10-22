@@ -71,7 +71,7 @@ resource "aws_internet_gateway" "dam-ie-igw" {
 resource "aws_subnet" "dam-sg-subnet" {
   provider   = aws.singapore
   vpc_id     = aws_vpc.dam-sg-vpc.id
-  cidr_block = var.vpc_cidr
+  cidr_block = var.sg_subnet_cidr
 
   tags = {
     Name = "dam-sg-subnet"
@@ -80,7 +80,7 @@ resource "aws_subnet" "dam-sg-subnet" {
 resource "aws_subnet" "dam-ie-subnet" {
   provider   = aws.ireland
   vpc_id     = aws_vpc.dam-ie-vpc.id
-  cidr_block = var.vpc_cidr
+  cidr_block = var.ie_subnet_cidr
 
   tags = {
     Name = "dam-ie-subnet"
@@ -92,7 +92,7 @@ resource "aws_route_table" "dam-sg-rt" {
   provider = aws.singapore
 
   route {
-    cidr_block = var.vpc_cidr
+    cidr_block = var.sg_subnet_cidr
     gateway_id = aws_internet_gateway.dam-sg-igw.id
   }
 
@@ -105,7 +105,7 @@ resource "aws_route_table" "dam-ie-rt" {
   provider = aws.ireland
 
   route {
-    cidr_block = var.vpc_cidr
+    cidr_block = var.ie_subnet_cidr
     gateway_id = aws_internet_gateway.dam-ie-igw.id
   }
 
@@ -194,7 +194,6 @@ resource "aws_security_group" "dam-ie-sg" {
 # EC2 Instances
 resource "aws_instance" "dam-sg-ec2" {
   provider               = aws.singapore
-  key_name               = "damian"
   ami                    = "ami-047126e50991d067b"
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.dam-sg-subnet.id
@@ -206,7 +205,6 @@ resource "aws_instance" "dam-sg-ec2" {
 }
 resource "aws_instance" "dam-ie-ec2" {
   provider               = aws.ireland
-  key_name               = "damian"
   ami                    = "ami-0d64bb532e0502c46"
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.dam-ie-subnet.id
@@ -257,7 +255,7 @@ resource "aws_lb" "dam-sg-lb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.dam-sg-alb-sg.id]
-  subnets            = [aws_subnet.dam-sg-subnet.id]
+  subnets            = [aws_subnet.dam-sg-subnet.id, aws_subnet.dam-ie-subnet.id]
 
   enable_deletion_protection = false
 
@@ -329,7 +327,7 @@ resource "aws_db_instance" "mysql_db" {
 resource "aws_security_group" "rds-sg" {
   name        = "rds-sg"
   description = "Security group for RDS"
-  vpc_id      = "damian-sg-vpc"
+  vpc_id      = "dam-sg-vpc"
   provider    = aws.singapore
 
   ingress {
@@ -417,7 +415,6 @@ resource "aws_autoscaling_group" "dam-ie-asg" {
 resource "aws_launch_template" "ec2-template-sg" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
-  key_name      = "damian"
   image_id      = "ami-047126e50991d067b"
   provider      = aws.singapore
 
@@ -430,7 +427,6 @@ resource "aws_launch_template" "ec2-template-sg" {
 resource "aws_launch_template" "ec2-template-ie" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
-  key_name      = "damian"
   image_id      = "ami-0d64bb532e0502c46"
   provider      = aws.ireland
 
