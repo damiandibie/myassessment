@@ -35,9 +35,9 @@ pipeline {
                 sh 'terraform apply -auto-approve -lock=false'
             }
         }
-        
+       */ 
     }
-    */
+    
     post {
         always {
             cleanWs()
