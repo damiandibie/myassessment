@@ -26,7 +26,7 @@ resource "aws_dynamodb_table" "basics-dynamodb-table" {
 
 
 
-
+/*
 # main.tf
 # VPC
 resource "aws_vpc" "dam-sg-vpc" {
@@ -426,3 +426,4 @@ resource "aws_route53_health_check" "ireland" {
     Name = "ireland-health-check"
   }
 }
+*/
