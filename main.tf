@@ -231,7 +231,7 @@ resource "aws_wafv2_web_acl_association" "alb_waf_association" {
 # Auto Scaling configuration for peak users
 resource "aws_autoscaling_group" "singapore_asg" {
   name                = "singapore-asg"
-  vpc_zone_identifier = "damian-sg-subnet"
+  vpc_zone_identifier = ["damian-sg-subnet"]
   target_group_arns   = [aws_lb_target_group.singapore_tg.arn]
   min_size            = 1
   max_size            = 10
@@ -245,7 +245,7 @@ resource "aws_autoscaling_group" "singapore_asg" {
 
 resource "aws_autoscaling_group" "ireland_asg" {
   name                = "ireland-asg"
-  vpc_zone_identifier = "damian-ie-subnet"
+  vpc_zone_identifier = ["damian-ie-subnet"]
   target_group_arns   = [aws_lb_target_group.ireland_tg.arn]
   min_size            = 1
   max_size            = 5
