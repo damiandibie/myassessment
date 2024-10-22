@@ -23,7 +23,7 @@ pipeline {
                 sh 'terraform plan -lock=false'
             }
         }
-        
+        /*
         stage('Approval') {
             steps {
                 input message: 'Apply the terraform plan?'
@@ -37,7 +37,7 @@ pipeline {
         }
         
     }
-    
+    */
     post {
         always {
             cleanWs()
