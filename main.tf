@@ -1,7 +1,7 @@
 #Create S3 bucket
 resource "aws_s3_bucket" "damiand-s3" {
   bucket = var.damiand-s3
-  
+
 }
 
 resource "aws_s3_bucket_versioning" "damiand-ver" {
@@ -14,9 +14,9 @@ resource "aws_s3_bucket_versioning" "damiand-ver" {
 
 #Create dynamoDB
 resource "aws_dynamodb_table" "basics-dynamodb-table" {
-  name           = "damiand-lock-state"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "LockID"
+  name         = "damiand-lock-state"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
 
   attribute {
     name = "LockID"
@@ -52,16 +52,16 @@ resource "aws_vpc" "dam-ie-vpc" {
 
 # Internet Gateway
 resource "aws_internet_gateway" "dam-sg-igw" {
-  vpc_id = aws_vpc.dam-sg-vpc.id
-  provider      = aws.singapore
+  vpc_id   = aws_vpc.dam-sg-vpc.id
+  provider = aws.singapore
 
   tags = {
     Name = "dam-sg-igw"
   }
 }
 resource "aws_internet_gateway" "dam-ie-igw" {
-  vpc_id = aws_vpc.dam-ie-vpc.id
-  provider      = aws.ireland
+  vpc_id   = aws_vpc.dam-ie-vpc.id
+  provider = aws.ireland
 
   tags = {
     Name = "dam-ie-igw"
@@ -69,18 +69,18 @@ resource "aws_internet_gateway" "dam-ie-igw" {
 }
 # Public Subnets
 resource "aws_subnet" "dam-sg-subnet" {
-  provider      = aws.singapore
-  vpc_id            = aws_vpc.dam-sg-vpc.id
-  cidr_block        = var.vpc_cidr
+  provider   = aws.singapore
+  vpc_id     = aws_vpc.dam-sg-vpc.id
+  cidr_block = var.vpc_cidr
 
   tags = {
     Name = "dam-sg-subnet"
   }
 }
 resource "aws_subnet" "dam-ie-subnet" {
-  provider          = aws.ireland
-  vpc_id            = aws_vpc.dam-ie-vpc.id
-  cidr_block        = var.vpc_cidr
+  provider   = aws.ireland
+  vpc_id     = aws_vpc.dam-ie-vpc.id
+  cidr_block = var.vpc_cidr
 
   tags = {
     Name = "dam-ie-subnet"
@@ -88,8 +88,8 @@ resource "aws_subnet" "dam-ie-subnet" {
 }
 # Route Table
 resource "aws_route_table" "dam-sg-rt" {
-  vpc_id = aws_vpc.dam-sg-vpc.id
-  provider      = aws.singapore
+  vpc_id   = aws_vpc.dam-sg-vpc.id
+  provider = aws.singapore
 
   route {
     cidr_block = var.vpc_cidr
@@ -101,8 +101,8 @@ resource "aws_route_table" "dam-sg-rt" {
   }
 }
 resource "aws_route_table" "dam-ie-rt" {
-  vpc_id = aws_vpc.dam-ie-vpc.id
-  provider      = aws.ireland
+  vpc_id   = aws_vpc.dam-ie-vpc.id
+  provider = aws.ireland
 
   route {
     cidr_block = var.vpc_cidr
@@ -128,7 +128,7 @@ resource "aws_security_group" "dam-sg-sg" {
   name        = "dam-sg-sg"
   description = "Security group for EC2 instances in Singapore"
   vpc_id      = aws_vpc.dam-sg-vpc.id
-  provider      = aws.singapore
+  provider    = aws.singapore
 
   ingress {
     description = "SSH from anywhere"
@@ -160,7 +160,7 @@ resource "aws_security_group" "dam-ie-sg" {
   name        = "dam-ie-sg"
   description = "Security group for EC2 instances in Ireland"
   vpc_id      = aws_vpc.dam-ie-vpc.id
-  provider      = aws.ireland
+  provider    = aws.ireland
 
   ingress {
     description = "SSH from anywhere"
@@ -193,23 +193,23 @@ resource "aws_security_group" "dam-ie-sg" {
 
 # EC2 Instances
 resource "aws_instance" "dam-sg-ec2" {
-  provider      = aws.singapore
-  ami           = "ami-047126e50991d067b"  
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.dam-sg.subnet.id
-  vpc_security_group_ids      = [aws_security_group.dam-sg-sg.id]
-  
+  provider               = aws.singapore
+  ami                    = "ami-047126e50991d067b"
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.dam-sg-subnet.id
+  vpc_security_group_ids = [aws_security_group.dam-sg-sg.id]
+
   tags = {
     Name = "dam-sg-ec2"
   }
 }
 resource "aws_instance" "dam-ie-ec2" {
-  provider      = aws.ireland
-  ami           = "ami-0d64bb532e0502c46" 
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.dam-ie.subnet.id
-  vpc_security_group_ids      = [aws_security_group.dam-ie-sg.id]
-  
+  provider               = aws.ireland
+  ami                    = "ami-0d64bb532e0502c46"
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.dam-ie-subnet.id
+  vpc_security_group_ids = [aws_security_group.dam-ie-sg.id]
+
   tags = {
     Name = "dam-ie-ec2"
   }
@@ -220,7 +220,7 @@ resource "aws_security_group" "dam-sg-alb-sg" {
   name        = "dam-sg-alb-sg"
   description = "Security group for ALB"
   vpc_id      = aws_vpc.dam-sg-vpc.id
-  provider      = aws.singapore
+  provider    = aws.singapore
 
   ingress {
     from_port   = 80
@@ -254,7 +254,7 @@ resource "aws_lb" "dam-sg-lb" {
   provider           = aws.singapore
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
+  security_groups    = [aws_security_group.dam-sg-alb-sg.id]
   subnets            = [aws_subnet.dam-sg-subnet.id]
 
   enable_deletion_protection = false
@@ -292,7 +292,7 @@ resource "aws_lb_target_group" "singapore-tg" {
 
 resource "aws_lb_target_group" "ireland-tg" {
   name     = "ireland-tg"
-  provider  = aws.ireland
+  provider = aws.ireland
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.dam-ie-vpc.id
@@ -310,17 +310,17 @@ resource "aws_lb_target_group_attachment" "ireland_attachment" {
 }
 # RDS MySQL instance
 resource "aws_db_instance" "mysql_db" {
-  engine               = "mysql"
-  engine_version       = "8.0"
-  instance_class       = "db.t3.micro"
-  allocated_storage    = 20
-  storage_type         = "gp2"
-  identifier           = "dam-db"
-  username             = var.db_username
-  password             = var.db_password  
-  skip_final_snapshot  = true
-  publicly_accessible  = false
-  provider             = aws.singapore
+  engine                 = "mysql"
+  engine_version         = "8.0"
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 20
+  storage_type           = "gp2"
+  identifier             = "dam-db"
+  username               = var.db_username
+  password               = var.db_password
+  skip_final_snapshot    = true
+  publicly_accessible    = false
+  provider               = aws.singapore
   vpc_security_group_ids = [aws_security_group.rds-sg.id]
 }
 
@@ -328,7 +328,7 @@ resource "aws_security_group" "rds-sg" {
   name        = "rds-sg"
   description = "Security group for RDS"
   vpc_id      = "damian-sg-vpc"
-  provider      = aws.singapore
+  provider    = aws.singapore
 
   ingress {
     from_port       = 3306
@@ -415,7 +415,7 @@ resource "aws_autoscaling_group" "dam-ie-asg" {
 resource "aws_launch_template" "ec2-template-sg" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
-  image_id      = "ami-047126e50991d067b"  
+  image_id      = "ami-047126e50991d067b"
   provider      = aws.singapore
 
   network_interfaces {
@@ -424,11 +424,11 @@ resource "aws_launch_template" "ec2-template-sg" {
   }
 }
 
-resource "aws_launch_template" "ec2_template-ie" {
+resource "aws_launch_template" "ec2-template-ie" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
-  image_id      = "ami-0d64bb532e0502c46" 
-  provider      = aws.ireland 
+  image_id      = "ami-0d64bb532e0502c46"
+  provider      = aws.ireland
 
   network_interfaces {
     associate_public_ip_address = true
