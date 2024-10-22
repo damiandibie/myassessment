@@ -23,6 +23,443 @@ resource "aws_dynamodb_table" "basics-dynamodb-table" {
     type = "S"
   }
 }
+
+
+
+
+# main.tf
+# VPC
+resource "aws_vpc" "dam-sg-vpc" {
+  cidr_block           = var.vpc_cidr
+  provider             = aws.singapore
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "dam-sg-vpc"
+  }
+}
+resource "aws_vpc" "dam-ie-vpc" {
+  cidr_block           = var.vpc_cidr
+  provider             = aws.ireland
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "dam-ie-vpc"
+  }
+}
+
+# Internet Gateway
+resource "aws_internet_gateway" "dam-sg-igw" {
+  vpc_id = aws_vpc.dam-sg-vpc.id
+  provider      = aws.singapore
+
+  tags = {
+    Name = "dam-sg-igw"
+  }
+}
+resource "aws_internet_gateway" "dam-ie-igw" {
+  vpc_id = aws_vpc.dam-ie-vpc.id
+  provider      = aws.ireland
+
+  tags = {
+    Name = "dam-ie-igw"
+  }
+}
+# Public Subnets
+resource "aws_subnet" "dam-sg-subnet" {
+  provider      = aws.singapore
+  vpc_id            = aws_vpc.dam-sg-vpc.id
+  cidr_block        = var.vpc_cidr
+
+  tags = {
+    Name = "dam-sg-subnet"
+  }
+}
+resource "aws_subnet" "dam-ie-subnet" {
+  provider          = aws.ireland
+  vpc_id            = aws_vpc.dam-ie-vpc.id
+  cidr_block        = var.vpc_cidr
+
+  tags = {
+    Name = "dam-ie-subnet"
+  }
+}
+# Route Table
+resource "aws_route_table" "dam-sg-rt" {
+  vpc_id = aws_vpc.dam-sg-vpc.id
+  provider      = aws.singapore
+
+  route {
+    cidr_block = var.vpc_cidr
+    gateway_id = aws_internet_gateway.dam-sg-igw.id
+  }
+
+  tags = {
+    Name = "dam-sg-rt"
+  }
+}
+resource "aws_route_table" "dam-ie-rt" {
+  vpc_id = aws_vpc.dam-ie-vpc.id
+  provider      = aws.ireland
+
+  route {
+    cidr_block = var.vpc_cidr
+    gateway_id = aws_internet_gateway.dam-ie-igw.id
+  }
+
+  tags = {
+    Name = "dam-ie-rt"
+  }
+}
+
+# Route Table Association
+resource "aws_route_table_association" "dam-sg-rta" {
+  subnet_id      = aws_subnet.dam-sg-subnet.id
+  route_table_id = aws_route_table.dam-sg-rt.id
+}
+resource "aws_route_table_association" "dam-is-rta" {
+  subnet_id      = aws_subnet.dam-ie-subnet.id
+  route_table_id = aws_route_table.dam-ie-rt.id
+}
+# Security Group
+resource "aws_security_group" "dam-sg-sg" {
+  name        = "dam-sg-sg"
+  description = "Security group for EC2 instances in Singapore"
+  vpc_id      = aws_vpc.dam-sg-vpc.id
+  provider      = aws.singapore
+
+  ingress {
+    description = "SSH from anywhere"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "SSH from anywhere"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "dam-sg-sg"
+  }
+}
+resource "aws_security_group" "dam-ie-sg" {
+  name        = "dam-ie-sg"
+  description = "Security group for EC2 instances in Ireland"
+  vpc_id      = aws_vpc.dam-ie-vpc.id
+  provider      = aws.ireland
+
+  ingress {
+    description = "SSH from anywhere"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "SSH from anywhere"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "dam-ie-sg"
+  }
+}
+
+
+
+# EC2 Instances
+resource "aws_instance" "dam-sg-ec2" {
+  provider      = aws.singapore
+  ami           = "ami-047126e50991d067b"  
+  instance_type = var.instance_type
+  subnet_id     = aws_subnet.dam-sg.subnet.id
+  vpc_security_group_ids      = [aws_security_group.dam-sg-sg.id]
+  
+  tags = {
+    Name = "dam-sg-ec2"
+  }
+}
+resource "aws_instance" "dam-ie-ec2" {
+  provider      = aws.ireland
+  ami           = "ami-0d64bb532e0502c46" 
+  instance_type = var.instance_type
+  subnet_id     = aws_subnet.dam-ie.subnet.id
+  vpc_security_group_ids      = [aws_security_group.dam-ie-sg.id]
+  
+  tags = {
+    Name = "dam-ie-ec2"
+  }
+}
+
+
+resource "aws_security_group" "dam-sg-alb-sg" {
+  name        = "dam-sg-alb-sg"
+  description = "Security group for ALB"
+  vpc_id      = aws_vpc.dam-sg-vpc.id
+  provider      = aws.singapore
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "dam-sg-alb"
+  }
+}
+
+# Application Load Balancer
+resource "aws_lb" "dam-sg-lb" {
+  name               = "dam-sg-lb"
+  provider           = aws.singapore
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = [aws_subnet.dam-sg-subnet.id]
+
+  enable_deletion_protection = false
+
+  tags = {
+    Name = "dam-sg-lb"
+  }
+}
+resource "aws_lb_listener" "dam-listen" {
+  load_balancer_arn = aws_lb.dam-sg-lb.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "forward"
+    forward {
+      target_group {
+        arn    = aws_lb_target_group.singapore-tg.arn
+        weight = 60
+      }
+      target_group {
+        arn    = aws_lb_target_group.ireland-tg.arn
+        weight = 30
+      }
+    }
+  }
+}
+resource "aws_lb_target_group" "singapore-tg" {
+  name     = "singapore-tg"
+  provider = aws.singapore
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.dam-sg-vpc.id
+}
+
+resource "aws_lb_target_group" "ireland-tg" {
+  name     = "ireland-tg"
+  provider  = aws.ireland
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.dam-ie-vpc.id
+}
+resource "aws_lb_target_group_attachment" "dam-sg-tg-ec2" {
+  target_group_arn = aws_lb_target_group.singapore-tg.arn
+  target_id        = aws_instance.dam-sg-ec2.id
+  port             = 80
+}
+
+resource "aws_lb_target_group_attachment" "ireland_attachment" {
+  target_group_arn = aws_lb_target_group.ireland-tg.arn
+  target_id        = aws_instance.dam-ie-ec2.id
+  port             = 80
+}
+# RDS MySQL instance
+resource "aws_db_instance" "mysql_db" {
+  engine               = "mysql"
+  engine_version       = "8.0"
+  instance_class       = "db.t3.micro"
+  allocated_storage    = 20
+  storage_type         = "gp2"
+  identifier           = "dam-db"
+  username             = var.db_username
+  password             = var.db_password  
+  skip_final_snapshot  = true
+  publicly_accessible  = false
+  provider             = aws.singapore
+  vpc_security_group_ids = [aws_security_group.rds-sg.id]
+}
+
+resource "aws_security_group" "rds-sg" {
+  name        = "rds-sg"
+  description = "Security group for RDS"
+  vpc_id      = "damian-sg-vpc"
+  provider      = aws.singapore
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.dam-sg-sg.id]
+  }
+}
+
+# WAF WebACL for France restriction
+resource "aws_wafv2_web_acl" "france_restriction" {
+  name  = "france-restriction"
+  scope = "REGIONAL"
+
+  default_action {
+    allow {}
+  }
+
+  rule {
+    name     = "block-france"
+    priority = 1
+
+    action {
+      block {}
+    }
+
+    statement {
+      geo_match_statement {
+        country_codes = ["FR"]
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "FranceBlockRule"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "FranceRestrictionWebACL"
+    sampled_requests_enabled   = true
+  }
+}
+
+# Associate WAF WebACL with ALB
+resource "aws_wafv2_web_acl_association" "alb_waf_association" {
+  resource_arn = aws_lb.dam-sg-lb.arn
+  web_acl_arn  = aws_wafv2_web_acl.france_restriction.arn
+}
+
+# Auto Scaling configuration for peak users
+resource "aws_autoscaling_group" "dam-sg-asg" {
+  name                = "dam-sg-asg"
+  vpc_zone_identifier = [aws_subnet.dam-sg-subnet.id]
+  target_group_arns   = [aws_lb_target_group.singapore-tg.arn]
+  min_size            = 1
+  max_size            = 10
+  desired_capacity    = 2
+  provider            = aws.singapore
+
+  launch_template {
+    id      = aws_launch_template.ec2-template-sg.id
+    version = "$Latest"
+  }
+}
+
+resource "aws_autoscaling_group" "dam-ie-asg" {
+  name                = "dam-ie-asg"
+  vpc_zone_identifier = [aws_subnet.dam-ie-subnet.id]
+  target_group_arns   = [aws_lb_target_group.ireland-tg.arn]
+  min_size            = 1
+  max_size            = 5
+  desired_capacity    = 1
+  provider            = aws.ireland
+
+  launch_template {
+    id      = aws_launch_template.ec2-template-ie.id
+    version = "$Latest"
+  }
+}
+
+resource "aws_launch_template" "ec2-template-sg" {
+  name_prefix   = "ec2-template"
+  instance_type = "t2.micro"
+  image_id      = "ami-047126e50991d067b"  
+  provider      = aws.singapore
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.dam-sg-sg.id]
+  }
+}
+
+resource "aws_launch_template" "ec2_template-ie" {
+  name_prefix   = "ec2-template"
+  instance_type = "t2.micro"
+  image_id      = "ami-0d64bb532e0502c46" 
+  provider      = aws.ireland 
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = [aws_security_group.dam-ie-sg.id]
+  }
+}
+
+resource "aws_autoscaling_policy" "damian-sg-policy" {
+  name                   = "damian-sg-policy"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.dam-sg-asg.name
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 70.0
+  }
+}
+resource "aws_autoscaling_policy" "damian-ie-policy" {
+  name                   = "damian-ie-policy"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.dam-ie-asg.name
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value = 70.0
+  }
+}
 /*
 resource "aws_vpc" "damian-sg-vpc" {
   cidr_block = var.vpc_cidr
