@@ -26,7 +26,7 @@ resource "aws_dynamodb_table" "basics-dynamodb-table" {
 
 
 
-
+/*
 # main.tf
 # VPC
 resource "aws_vpc" "dam-sg-vpc" {
@@ -460,6 +460,7 @@ resource "aws_autoscaling_policy" "damian-ie-policy" {
     target_value = 70.0
   }
 }
+*/
 /*
 resource "aws_vpc" "damian-sg-vpc" {
   cidr_block = var.vpc_cidr
