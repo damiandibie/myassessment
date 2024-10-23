@@ -23,7 +23,7 @@ variable "vpc_cidr_ie" {
 }
 variable "ie_subnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
-  default     = "172.16.0.0/24"
+  default     = "172.0.0.0/24"
 }
 variable "instance_type" {
   description = "EC2 instance type"
