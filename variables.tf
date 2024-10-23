@@ -17,6 +17,10 @@ variable "sg_pusubnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
   default     = "10.0.1.0/24"
 }
+variable "sg_pusubnet_cidr2" {
+  description = "CIDR block for the subnet in Singapore"
+  default     = "10.0.3.0/24"
+}
 variable "sg_prsubnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
   default     = "10.0.2.0/24"
@@ -28,6 +32,10 @@ variable "vpc_cidr_ie" {
 variable "ie_pusubnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
   default     = "172.0.1.0/24"
+}
+variable "ie_pusubnet_cidr2" {
+  description = "CIDR block for the subnet in Singapore"
+  default     = "172.0.3.0/24"
 }
 variable "ie_prsubnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
@@ -55,4 +63,10 @@ variable "dam-ie-asg" {
 }
 variable "ec2-template-ie" {
   default     = "ec2-template-ie"
+}
+variable "dam-sg-pusubnet_1" {
+  default     = "ap_southeast_1a"
+}
+variable "dam-sg-pusubnet_2" {
+  default     = "ap_southeast_1b"
 }
