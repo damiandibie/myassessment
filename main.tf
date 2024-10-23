@@ -145,7 +145,7 @@ resource "aws_route_table_association" "dam-ie-rta" {
   subnet_id      = aws_subnet.dam-ie-pusubnet.id
   route_table_id = aws_route_table.dam-ie-rt.id
 }
-/*
+
 # Security Group
 resource "aws_security_group" "dam-sg-sg" {
   name        = "dam-sg-sg"
@@ -219,7 +219,8 @@ resource "aws_instance" "dam-sg-ec2" {
   provider               = aws.singapore
   ami                    = "ami-047126e50991d067b"
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.dam-sg-subnet.id
+  key_name               = "damian-sg"
+  subnet_id              = aws_subnet.dam-sg-pusubnet.id
   vpc_security_group_ids = [aws_security_group.dam-sg-sg.id]
 
   tags = {
@@ -230,7 +231,8 @@ resource "aws_instance" "dam-ie-ec2" {
   provider               = aws.ireland
   ami                    = "ami-0d64bb532e0502c46"
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.dam-ie-subnet.id
+  key_name               = "damian-ie"
+  subnet_id              = aws_subnet.dam-ie-pusubnet.id
   vpc_security_group_ids = [aws_security_group.dam-ie-sg.id]
 
   tags = {
@@ -238,36 +240,7 @@ resource "aws_instance" "dam-ie-ec2" {
   }
 }
 
-# RDS MySQL instance
-resource "aws_db_instance" "mysql_db" {
-  engine                 = "mysql"
-  engine_version         = "8.0"
-  instance_class         = "db.t3.micro"
-  allocated_storage      = 20
-  storage_type           = "gp2"
-  identifier             = "dam-db"
-  username               = var.db_username
-  password               = var.db_password
-  skip_final_snapshot    = true
-  publicly_accessible    = false
-  provider               = aws.singapore
-  vpc_security_group_ids = [aws_security_group.rds-sg.id]
-}
-
-resource "aws_security_group" "rds-sg" {
-  name        = "rds-sg"
-  description = "Security group for RDS"
-  vpc_id      = "dam-sg-vpc"
-  provider    = aws.singapore
-
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.dam-sg-sg.id]
-  }
-}
-
+/*
 
 # Auto Scaling configuration for peak users
 resource "aws_autoscaling_group" "dam-sg-asg" {
