@@ -325,6 +325,47 @@ resource "aws_autoscaling_policy" "damian-ie-policy" {
     target_value = 70.0
   }
 }
+# VPC Peering connection
+resource "aws_vpc_peering_connection" "singapore-ireland" {
+  provider    = aws.singapore
+  vpc_id      = aws_vpc.dam-sg-vpc.id
+  peer_vpc_id = aws_vpc.dam-ie-vpc.id
+  peer_region = "eu-west-1"
+  auto_accept = false
+
+  tags = {
+    Name = "singapore-ireland-peering"
+  }
+}
+
+# Accept VPC peering connection in Ireland
+resource "aws_vpc_peering_connection_accepter" "ireland-accepter" {
+  provider                  = aws.ireland
+  vpc_peering_connection_id = aws_vpc_peering_connection.singapore-ireland.id
+  auto_accept              = true
+
+  tags = {
+    Name = "ireland-accepter"
+  }
+}
+# Route 53 Private Hosted Zone
+resource "aws_route53_zone" "ie-private" {
+  provider = aws.singapore
+  name     = "damian.internal"
+
+  vpc {
+    vpc_id = aws_vpc.dam-sg-vpc.id
+  }
+}
+
+# Associate the private hosted zone with Ireland VPC
+resource "aws_route53_zone_association" "ireland" {
+  provider        = aws.singapore
+  zone_id         = aws_route53_zone.ie-private.id
+  vpc_id          = aws_vpc.dam-ie-vpc.id
+  vpc_region      = "eu-west-1"
+}
+
 /*
 # Create a private hosted zone associated with your VPC
 resource "aws_route53_zone" "private" {
