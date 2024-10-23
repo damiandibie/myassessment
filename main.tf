@@ -109,7 +109,7 @@ resource "aws_subnet" "dam-ie-prsubnet" {
 resource "aws_route_table" "dam-sg-rt" {
   vpc_id   = aws_vpc.dam-sg-vpc.id
   provider = aws.singapore
-  route = {
+  route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.dam-sg-igw.id
   }
@@ -121,7 +121,7 @@ resource "aws_route_table" "dam-sg-rt" {
 resource "aws_route_table" "dam-ie-rt" {
   vpc_id   = aws_vpc.dam-ie-vpc.id
   provider = aws.ireland
-  route = {
+  route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.dam-ie-igw.id
   }
