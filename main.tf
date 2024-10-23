@@ -139,7 +139,7 @@ resource "aws_route_table_association" "dam-sg-rta" {
   subnet_id      = aws_subnet.dam-sg-pusubnet.id
   route_table_id = aws_route_table.dam-sg-rt.id
 }
-resource "aws_route_table_association" "dam-is-rta" {
+resource "aws_route_table_association" "dam-ie-rta" {
   subnet_id      = aws_subnet.dam-ie-pusubnet.id
   route_table_id = aws_route_table.dam-ie-rt.id
 }
