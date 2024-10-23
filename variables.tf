@@ -13,17 +13,25 @@ variable "vpc_cidr_sg" {
   default     = "10.0.0.0/16"
 }
 
-variable "sg_subnet_cidr" {
+variable "sg_pusubnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
-  default     = "10.0.0.0/24"
+  default     = "10.0.1.0/24"
+}
+variable "sg_prsubnet_cidr" {
+  description = "CIDR block for the subnet in Singapore"
+  default     = "10.0.2.0/24"
 }
 variable "vpc_cidr_ie" {
   description = "CIDR block for the VPC"
   default     = "172.0.0.0/16"
 }
-variable "ie_subnet_cidr" {
+variable "ie_pusubnet_cidr" {
   description = "CIDR block for the subnet in Singapore"
-  default     = "172.0.0.0/24"
+  default     = "172.0.1.0/24"
+}
+variable "ie_prsubnet_cidr" {
+  description = "CIDR block for the subnet in Singapore"
+  default     = "172.0.2.0/24"
 }
 variable "instance_type" {
   description = "EC2 instance type"
