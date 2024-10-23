@@ -240,12 +240,12 @@ resource "aws_instance" "dam-ie-ec2" {
   }
 }
 
-/*
+
 
 # Auto Scaling configuration for peak users
 resource "aws_autoscaling_group" "dam-sg-asg" {
   name                = "dam-sg-asg"
-  vpc_zone_identifier = [aws_subnet.dam-sg-subnet.id]
+  vpc_zone_identifier = [aws_subnet.dam-sg-pusubnet.id]
   #target_group_arns   = [aws_lb_target_group.singapore-tg.arn]
   min_size            = 1
   max_size            = 10
@@ -260,7 +260,7 @@ resource "aws_autoscaling_group" "dam-sg-asg" {
 
 resource "aws_autoscaling_group" "dam-ie-asg" {
   name                = "dam-ie-asg"
-  vpc_zone_identifier = [aws_subnet.dam-ie-subnet.id]
+  vpc_zone_identifier = [aws_subnet.dam-ie-pusubnet.id]
   #target_group_arns   = [aws_lb_target_group.ireland-tg.arn]
   min_size            = 1
   max_size            = 5
@@ -277,6 +277,7 @@ resource "aws_launch_template" "ec2-template-sg" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
   image_id      = "ami-047126e50991d067b"
+  key_name      = "damian-sg"
   provider      = aws.singapore
 
   network_interfaces {
@@ -289,6 +290,7 @@ resource "aws_launch_template" "ec2-template-ie" {
   name_prefix   = "ec2-template"
   instance_type = "t2.micro"
   image_id      = "ami-0d64bb532e0502c46"
+  key_name      = "damian-ie"
   provider      = aws.ireland
 
   network_interfaces {
@@ -300,6 +302,7 @@ resource "aws_launch_template" "ec2-template-ie" {
 resource "aws_autoscaling_policy" "damian-sg-policy" {
   name                   = "damian-sg-policy"
   policy_type            = "TargetTrackingScaling"
+  provider               = aws.singapore
   autoscaling_group_name = aws_autoscaling_group.dam-sg-asg.name
 
   target_tracking_configuration {
@@ -312,6 +315,7 @@ resource "aws_autoscaling_policy" "damian-sg-policy" {
 resource "aws_autoscaling_policy" "damian-ie-policy" {
   name                   = "damian-ie-policy"
   policy_type            = "TargetTrackingScaling"
+  provider            = aws.ireland
   autoscaling_group_name = aws_autoscaling_group.dam-ie-asg.name
 
   target_tracking_configuration {
@@ -321,6 +325,7 @@ resource "aws_autoscaling_policy" "damian-ie-policy" {
     target_value = 70.0
   }
 }
+/*
 # Create a private hosted zone associated with your VPC
 resource "aws_route53_zone" "private" {
   name = "internal.routing"           # This is for internal reference only
