@@ -73,6 +73,17 @@ resource "aws_subnet" "dam-sg-pusubnet" {
   provider   = aws.singapore
   vpc_id     = aws_vpc.dam-sg-vpc.id
   cidr_block = var.sg_pusubnet_cidr
+  availability_zone = "ap-southeast-1a"
+
+  tags = {
+    Name = "dam-sg-subnet-pub"
+  }
+}
+resource "aws_subnet" "dam-sg-pusubnet1" {
+  provider   = aws.singapore
+  vpc_id     = aws_vpc.dam-sg-vpc.id
+  cidr_block = var.sg_pusubnet_cidr2
+  availability_zone = "ap-southeast-1b"
 
   tags = {
     Name = "dam-sg-subnet-pub"
@@ -91,6 +102,15 @@ resource "aws_subnet" "dam-ie-pusubnet" {
   provider   = aws.ireland
   vpc_id     = aws_vpc.dam-ie-vpc.id
   cidr_block = var.ie_pusubnet_cidr
+
+  tags = {
+    Name = "dam-ie-subnet-pub"
+  }
+}
+resource "aws_subnet" "dam-ie-pusubnet1" {
+  provider   = aws.ireland
+  vpc_id     = aws_vpc.dam-ie-vpc.id
+  cidr_block = var.ie_pusubnet_cidr2
 
   tags = {
     Name = "dam-ie-subnet-pub"
@@ -140,12 +160,21 @@ resource "aws_route_table_association" "dam-sg-rta" {
   subnet_id      = aws_subnet.dam-sg-pusubnet.id
   route_table_id = aws_route_table.dam-sg-rt.id
 }
+resource "aws_route_table_association" "dam-sg-rta1" {
+  provider       = aws.singapore
+  subnet_id      = aws_subnet.dam-sg-pusubnet1.id
+  route_table_id = aws_route_table.dam-sg-rt.id
+}
 resource "aws_route_table_association" "dam-ie-rta" {
   provider       = aws.ireland
   subnet_id      = aws_subnet.dam-ie-pusubnet.id
   route_table_id = aws_route_table.dam-ie-rt.id
 }
-
+resource "aws_route_table_association" "dam-ie-rta1" {
+  provider       = aws.ireland
+  subnet_id      = aws_subnet.dam-ie-pusubnet1.id
+  route_table_id = aws_route_table.dam-ie-rt.id
+}
 # Security Group
 resource "aws_security_group" "dam-sg-sg" {
   name        = "dam-sg-sg"
@@ -214,42 +243,14 @@ resource "aws_security_group" "dam-ie-sg" {
 
 
 
-# EC2 Instances
-resource "aws_instance" "dam-sg-ec2" {
-  provider               = aws.singapore
-  ami                    = "ami-047126e50991d067b"
-  instance_type          = var.instance_type
-  key_name               = "damian-sg"
-  subnet_id              = aws_subnet.dam-sg-pusubnet.id
-  vpc_security_group_ids = [aws_security_group.dam-sg-sg.id]
-
-  tags = {
-    Name = "dam-sg-ec2"
-  }
-}
-resource "aws_instance" "dam-ie-ec2" {
-  provider               = aws.ireland
-  ami                    = "ami-0d64bb532e0502c46"
-  instance_type          = var.instance_type
-  key_name               = "damian-ie"
-  subnet_id              = aws_subnet.dam-ie-pusubnet.id
-  vpc_security_group_ids = [aws_security_group.dam-ie-sg.id]
-
-  tags = {
-    Name = "dam-ie-ec2"
-  }
-}
-
-
-
 # Auto Scaling configuration for peak users
 resource "aws_autoscaling_group" "dam-sg-asg" {
   name                = "dam-sg-asg"
   vpc_zone_identifier = [aws_subnet.dam-sg-pusubnet.id]
-  #target_group_arns   = [aws_lb_target_group.singapore-tg.arn]
+  target_group_arns   = [aws_lb_target_group.dam-sg-tg.arn]
   min_size            = 1
   max_size            = 10
-  desired_capacity    = 2
+  desired_capacity    = 1
   provider            = aws.singapore
 
   launch_template {
@@ -261,7 +262,7 @@ resource "aws_autoscaling_group" "dam-sg-asg" {
 resource "aws_autoscaling_group" "dam-ie-asg" {
   name                = "dam-ie-asg"
   vpc_zone_identifier = [aws_subnet.dam-ie-pusubnet.id]
-  #target_group_arns   = [aws_lb_target_group.ireland-tg.arn]
+  target_group_arns   = [aws_lb_target_group.dam-ie-tg.arn]
   min_size            = 1
   max_size            = 5
   desired_capacity    = 1
@@ -279,7 +280,7 @@ resource "aws_launch_template" "ec2-template-sg" {
   image_id      = "ami-047126e50991d067b"
   key_name      = "damian-sg"
   provider      = aws.singapore
-
+   
   network_interfaces {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.dam-sg-sg.id]
@@ -292,6 +293,7 @@ resource "aws_launch_template" "ec2-template-ie" {
   image_id      = "ami-0d64bb532e0502c46"
   key_name      = "damian-ie"
   provider      = aws.ireland
+  
 
   network_interfaces {
     associate_public_ip_address = true
@@ -364,6 +366,141 @@ resource "aws_route53_zone_association" "ireland" {
   zone_id         = aws_route53_zone.ie-private.id
   vpc_id          = aws_vpc.dam-ie-vpc.id
   vpc_region      = "eu-west-1"
+}
+# Security Group for the ALB
+resource "aws_security_group" "dam-sg-sgalb" {
+  name        = "dam-sg-sgalb"
+  description = "Security group for ALB"
+  vpc_id      = aws_vpc.dam-sg-vpc.id
+  provider        = aws.singapore
+
+  ingress {
+    description = "HTTP from anywhere"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+# Application Load Balancer
+resource "aws_lb" "dam-sg-alb" {
+  name               = "dam-sg-alb"
+  provider           = aws.singapore
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.dam-sg-sgalb.id]
+  subnets            = [aws_subnet.dam-sg-pusubnet.id, aws_subnet.dam-sg-pusubnet1.id]
+  enable_deletion_protection = true
+
+}
+
+# Target Group
+resource "aws_lb_target_group" "dam-sg-tg" {
+  name     = "dam-sg-tg"
+  provider        = aws.singapore
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.dam-sg-vpc.id
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    interval            = 30
+    matcher            = "200"
+    path               = "/"
+    port               = "traffic-port"
+    protocol           = "HTTP"
+    timeout            = 5
+    unhealthy_threshold = 2
+  }
+}
+# Listener
+resource "aws_lb_listener" "dam-sg-listen" {
+  load_balancer_arn = aws_lb.dam-sg-alb.arn
+  port              = 80
+  protocol          = "HTTP"
+  provider        = aws.singapore
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.dam-sg-tg.arn
+  }
+}
+
+# Security Group for the ALB
+resource "aws_security_group" "dam-ie-sgalb" {
+  name        = "dam-ie-sgalb"
+  description = "Security group for ALB"
+  vpc_id      = aws_vpc.dam-ie-vpc.id
+  provider        = aws.ireland
+
+  ingress {
+    description = "HTTP from anywhere"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+# Application Load Balancer
+resource "aws_lb" "dam-ie-alb" {
+  name               = "dam-ie-alb"
+  provider           = aws.ireland
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.dam-ie-sgalb.id]
+  subnets            = [aws_subnet.dam-ie-pusubnet.id, aws_subnet.dam-ie-pusubnet1.id]
+  enable_deletion_protection = true
+
+}
+
+# Target Group
+resource "aws_lb_target_group" "dam-ie-tg" {
+  name     = "dam-ie-tg"
+  provider        = aws.ireland
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.dam-ie-vpc.id
+
+  health_check {
+    enabled             = true
+    healthy_threshold   = 2
+    interval            = 30
+    matcher            = "200"
+    path               = "/"
+    port               = "traffic-port"
+    protocol           = "HTTP"
+    timeout            = 5
+    unhealthy_threshold = 2
+  }
+}
+# Listener
+resource "aws_lb_listener" "dam-ie-listen" {
+  load_balancer_arn = aws_lb.dam-ie-alb.arn
+  port              = 80
+  protocol          = "HTTP"
+  provider        = aws.ireland
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.dam-ie-tg.arn
+  }
 }
 
 /*
