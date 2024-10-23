@@ -136,10 +136,12 @@ resource "aws_route_table" "dam-ie-rt" {
 
 # Route Table Association
 resource "aws_route_table_association" "dam-sg-rta" {
+  provider       = aws.singapore
   subnet_id      = aws_subnet.dam-sg-pusubnet.id
   route_table_id = aws_route_table.dam-sg-rt.id
 }
 resource "aws_route_table_association" "dam-ie-rta" {
+  provider       = aws.ireland
   subnet_id      = aws_subnet.dam-ie-pusubnet.id
   route_table_id = aws_route_table.dam-ie-rt.id
 }
