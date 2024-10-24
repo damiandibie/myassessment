@@ -390,6 +390,20 @@ resource "aws_route53_record" "dam-ie-rou53-1" {
   set_identifier = "ireland"
   records       = ["172.0.3.193", "172.0.1.203"]  # Replace with your Ireland server IP
 }
+
+resource "aws_route53_vpc_association_authorization" "ireland_auth" {
+  provider = aws.ireland  # Authorization must be from the hosted zone's region
+  vpc_id   = aws_vpc.dam-ie-vpc.id
+  zone_id  = aws_route53_zone.ie-private.id
+}
+#  Create the association from Ireland
+resource "aws_route53_zone_association" "ireland_assoc" {
+  provider = aws.ireland   # Association must be from the VPC's region
+  vpc_id   = aws_vpc.dam-ie-vpc.id
+  zone_id  = aws_route53_zone.ie-private.id
+
+  depends_on = [aws_route53_vpc_association_authorization.ireland_auth]
+}
 # Create WAF Web ACL
 resource "aws_wafv2_web_acl" "geo_block_fr_sg" {
   name        = "geo-block-france-sg"
@@ -512,7 +526,7 @@ resource "aws_lb" "dam-sg-alb" {
 # Target Group
 resource "aws_lb_target_group" "dam-sg-tg" {
   name     = "dam-sg-tg"
-  provider        = aws.singapore
+  provider = aws.singapore
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.dam-sg-vpc.id
@@ -580,7 +594,7 @@ resource "aws_lb" "dam-ie-alb" {
 # Target Group
 resource "aws_lb_target_group" "dam-ie-tg" {
   name     = "dam-ie-tg"
-  provider        = aws.ireland
+  provider = aws.ireland
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.dam-ie-vpc.id
