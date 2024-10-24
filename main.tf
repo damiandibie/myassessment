@@ -360,13 +360,7 @@ resource "aws_route53_zone" "ie-private" {
   }
 }
 
-# Associate the private hosted zone with Ireland VPC
-resource "aws_route53_zone_association" "ireland" {
-  provider        = aws.singapore
-  zone_id         = aws_route53_zone.ie-private.id
-  vpc_id          = aws_vpc.dam-ie-vpc.id
-  vpc_region      = "eu-west-1"
-}
+
 resource "aws_route53_record" "dam-sg-rou53-1" {
   provider = aws.singapore
   
@@ -379,7 +373,7 @@ resource "aws_route53_record" "dam-sg-rou53-1" {
     weight = 60
   }
   set_identifier = "singapore"
-  records       = ["10.0.3.121", "10.0.1.65"]  
+  records       = ["10.0.3.121", "10.0.1.65"]  # Replace with your Singapore server IP
 }
 resource "aws_route53_record" "dam-ie-rou53-1" {
   provider = aws.ireland
@@ -394,7 +388,7 @@ resource "aws_route53_record" "dam-ie-rou53-1" {
     weight = 30
   }
   set_identifier = "ireland"
-  records       = ["172.0.3.193", "172.0.1.203"]  
+  records       = ["172.0.3.193", "172.0.1.203"]  # Replace with your Ireland server IP
 }
 # Create WAF Web ACL
 resource "aws_wafv2_web_acl" "geo_block_fr_sg" {
@@ -435,7 +429,7 @@ resource "aws_wafv2_web_acl" "geo_block_fr_sg" {
 }
 resource "aws_wafv2_web_acl_association" "alb_association_sg" {
   provider     = aws.singapore
-  resource_arn = aws_lb.dam-sg-alb.arn  
+  resource_arn = aws_lb.dam-sg-alb.arn  # Replace with your ALB ARN
   web_acl_arn  = aws_wafv2_web_acl.geo_block_fr_sg.arn
 }
 
@@ -477,7 +471,7 @@ resource "aws_wafv2_web_acl" "geo_block_fr_ie" {
 }
 resource "aws_wafv2_web_acl_association" "alb_association_ie" {
   provider     = aws.ireland
-  resource_arn = aws_lb.dam-ie-alb.arn  
+  resource_arn = aws_lb.dam-ie-alb.arn  # Replace with your ALB ARN
   web_acl_arn  = aws_wafv2_web_acl.geo_block_fr_ie.arn
 }
 # Security Group for the ALB
