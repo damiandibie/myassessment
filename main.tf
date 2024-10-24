@@ -367,6 +367,119 @@ resource "aws_route53_zone_association" "ireland" {
   vpc_id          = aws_vpc.dam-ie-vpc.id
   vpc_region      = "eu-west-1"
 }
+resource "aws_route53_record" "dam-sg-rou53-1" {
+  provider = aws.singapore
+  
+  zone_id = aws_route53_zone.ie-private.zone_id
+  name    = "app"  # This will create app.internal.service
+  type    = "A"
+  ttl     = "300"
+
+  weighted_routing_policy {
+    weight = 60
+  }
+  set_identifier = "singapore"
+  records       = ["10.0.3.121", "10.0.1.65"]  
+}
+resource "aws_route53_record" "dam-ie-rou53-1" {
+  provider = aws.ireland
+  
+  zone_id = aws_route53_zone.ie-private.zone_id
+  name    = "app"
+  type    = "A"
+  ttl     = "300"
+  
+
+  weighted_routing_policy {
+    weight = 30
+  }
+  set_identifier = "ireland"
+  records       = ["172.0.3.193", "172.0.1.203"]  
+}
+# Create WAF Web ACL
+resource "aws_wafv2_web_acl" "geo_block_fr_sg" {
+  name        = "geo-block-france-sg"
+  description = "Block traffic from France"
+  scope       = "REGIONAL"  
+  provider    = aws.singapore
+
+  default_action {
+    allow {}
+  }
+  rule {
+    name     = "block-france"
+    priority = 1
+
+    action {
+      block {}
+    }
+
+    statement {
+      geo_match_statement {
+        country_codes = ["FR"]
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name               = "BlockFranceMetric"
+      sampled_requests_enabled  = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name               = "GeoblockWAFMetric"
+    sampled_requests_enabled  = true
+  }
+}
+resource "aws_wafv2_web_acl_association" "alb_association_sg" {
+  provider     = aws.singapore
+  resource_arn = aws_lb.dam-sg-alb.arn  
+  web_acl_arn  = aws_wafv2_web_acl.geo_block_fr_sg.arn
+}
+
+resource "aws_wafv2_web_acl" "geo_block_fr_ie" {
+  name        = "geo-block-france-ie"
+  description = "Block traffic from France"
+  scope       = "REGIONAL"  
+  provider    = aws.ireland
+
+  default_action {
+    allow {}
+  }
+  rule {
+    name     = "block-france"
+    priority = 1
+
+    action {
+      block {}
+    }
+
+    statement {
+      geo_match_statement {
+        country_codes = ["FR"]
+      }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name               = "BlockFranceMetric"
+      sampled_requests_enabled  = true
+    }
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name               = "GeoblockWAFMetric"
+    sampled_requests_enabled  = true
+  }
+}
+resource "aws_wafv2_web_acl_association" "alb_association_ie" {
+  provider     = aws.ireland
+  resource_arn = aws_lb.dam-ie-alb.arn  
+  web_acl_arn  = aws_wafv2_web_acl.geo_block_fr_ie.arn
+}
 # Security Group for the ALB
 resource "aws_security_group" "dam-sg-sgalb" {
   name        = "dam-sg-sgalb"
@@ -378,7 +491,7 @@ resource "aws_security_group" "dam-sg-sgalb" {
     description = "HTTP from anywhere"
     from_port   = 0
     to_port     = 0
-    protocol    = "tcp"
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -446,7 +559,7 @@ resource "aws_security_group" "dam-ie-sgalb" {
     description = "HTTP from anywhere"
     from_port   = 0
     to_port     = 0
-    protocol    = "tcp"
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
